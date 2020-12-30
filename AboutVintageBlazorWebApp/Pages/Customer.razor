@@ -1,0 +1,58 @@
+﻿@page "/customer"
+@using AboutVintageBlazorWebApp.Data
+@inherits AboutVintageBlazorWebApp.Data.StoreListBase
+@inject HttpClient http
+
+<h3>Customer</h3>
+
+<div class="input-group">
+    <select class="custom-select" id="inputGroupSelect02">
+        <option selected>Store</option>
+        <option value="1">Flagship</option>
+        <option value="2">Nygade</option>
+    </select>
+    <input type="text" class="form-control" placeholder="CustomerCount" aria-label="CustomerCount" aria-describedby="button-addon4">
+    <div class="input-group-append" id="button-addon4">
+        <button class="btn btn-outline-secondary" type="button">Get</button>
+        <button class="btn btn-outline-secondary" type="button">Button</button>
+    </div>
+</div>
+
+<button class="btn btn-success" @onclick="@GetStores"> Get Stores</button>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>Name</th>
+            <th>RevenueCash</th>
+            <th>RevenueMobilePay</th>
+            <th>RevenueCreditCard</th>
+            <th>CustomerCount</th>
+        </tr>
+    </thead>
+    
+    <tbody>
+        @foreach (var store in stores)
+        {
+            <tr>@store.Id</tr>
+            <tr>@store.Date</tr>
+            <tr>@store.StoreName</tr>
+            <tr>@store.RevenueCash</tr>
+            <tr>@store.RevenueMobilePay</tr>
+            <tr>@store.RevenueCreditCard</tr>
+            <tr>@store.CustomerCount</tr>
+        }
+    </tbody>
+</table>
+
+@code
+{
+    List<Store> stores = new List<Store>();
+
+    private async Task GetStores()
+    {
+        stores = await http.GetJsonAsync<List<Store>>("https://localhost:44327/api/stores");
+    }
+}

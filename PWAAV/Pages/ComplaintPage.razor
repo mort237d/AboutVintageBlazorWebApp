@@ -1,0 +1,181 @@
+﻿@page "/complaints"
+@using AboutVintageBlazorWebApp.Data
+@using AboutVintageWebAppLibrary
+@using PWAAV.Modal
+@inject IModalService Modal
+@inject IToastService toastService
+@inject HttpClient Http
+
+<div class="input-group mb-3">
+    <div class="input-group-prepend">
+        <span class="input-group-text">New complaint</span>
+    </div>
+    <select class="custom-select" id="inputGroupSelect01" @bind="selectedProductType">
+        <option>Watch</option>
+        <option>Strap</option>
+    </select>
+    <div class="input-group-append">
+        <button class="btn btn-success" type="button" id="button-addon2" @onclick="AddNewComplaint">Add</button>
+    </div>
+</div>
+
+@if (_complaints == null)
+{
+    <div class="spinner-border" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+}
+else
+{
+    <div class="table-responsive-sm">
+        <table class="table table-sm table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>Customer name</th>
+                    <th>Order No</th>
+                    <th>Order Date</th>
+                    <th>Product type</th>
+                    @*<th>Product variant</th>
+                    <th>Watch No</th>
+                    <th>Watch Producer</th>
+                    <th>Error</th>
+                    <th>Solution</th>
+                    <th>Comments</th>*@
+                    @*<th>Actions</th>*@
+                </tr>
+            </thead>
+            <tbody>
+
+                @foreach (var complaint in _complaints.OrderByDescending(c => c.Date))
+                {
+                    <tr @onclick="@(() => ShowInfo(complaint))" style="cursor: pointer">
+                        <td>#@complaint.Id</td>
+                        <td>@complaint.Date.ToString("dd-MM-yyyy")</td>
+                        <td>@complaint.CustomerName</td>
+                        <td>@complaint.OrderNumber</td>
+                        <td>@complaint.OrderDate.ToString("dd-MM-yyyy")</td>
+                        <td>@complaint.ProductType</td>
+                        @*<td>@complaint.ProductVariant</td>
+                        <td>@complaint.WatchNumber</td>
+                        <td>@complaint.WatchProducer</td>
+                        <td>@complaint.Error</td>
+                        <td>@complaint.Solution</td>
+                        <td>@complaint.Comments</td>*@
+                        @*<td>
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Basic example">
+                                <button @onclick="@(() => Edit(complaint))" type="button" class="btn btn-primary"><i class="oi oi-pencil"></i></button>
+                                <button @onclick="@(() => Delete(complaint))" type="button" class="btn btn-danger"><i class="oi oi-trash"></i></button>
+                            </div>
+                        </td>*@
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+}
+
+@code {
+    private string _localApi = "https://localhost:44327/";
+    private string _azureApi = "";
+    private string _currentApi;
+
+    private List<Complaint> _complaints = new List<Complaint>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentApi = _azureApi;
+        if (!_complaints.Any()) _complaints = await Http.GetFromJsonAsync<List<Complaint>>($"{_currentApi}api/complaints");
+    }
+
+    private Complaint complaintBeforeEdit;
+
+    private void Edit(Complaint complaint)
+    {
+        if (!complaint.IsEditing)
+        {
+            complaintBeforeEdit = new Complaint();
+            complaintBeforeEdit.Date = complaint.Date;
+            complaintBeforeEdit.CustomerName = complaint.CustomerName;
+            complaintBeforeEdit.ProductVariant = complaint.ProductVariant;
+            complaintBeforeEdit.OrderNumber = complaint.OrderNumber;
+            complaintBeforeEdit.Comments = complaint.Comments;
+            complaintBeforeEdit.Error = complaint.Error;
+            complaintBeforeEdit.Solution = complaint.Solution;
+            complaintBeforeEdit.WatchNumber = complaint.WatchNumber;
+            complaintBeforeEdit.WatchProducer = complaint.WatchProducer;
+            complaintBeforeEdit.OrderDate = complaint.OrderDate;
+        }
+        if (complaint.IsEditing)
+        {
+            complaint.Date = complaintBeforeEdit.Date;
+            complaint.CustomerName = complaintBeforeEdit.CustomerName;
+            complaint.ProductVariant = complaintBeforeEdit.ProductVariant;
+            complaint.OrderNumber = complaintBeforeEdit.OrderNumber;
+            complaint.Comments = complaintBeforeEdit.Comments;
+            complaint.Error = complaintBeforeEdit.Error;
+            complaint.Solution = complaintBeforeEdit.Solution;
+            complaint.WatchNumber = complaintBeforeEdit.WatchNumber;
+            complaint.WatchProducer = complaintBeforeEdit.WatchProducer;
+            complaint.OrderDate = complaintBeforeEdit.OrderDate;
+        };
+
+        foreach (Complaint c in _complaints)
+        {
+            if (complaint != c) c.IsEditing = false;
+        }
+
+        complaint.IsEditing = !complaint.IsEditing;
+    }
+
+    private async Task ShowInfo(Complaint complaint)
+    {
+        var parameter = new ModalParameters();
+        parameter.Add("ComplaintInfo", complaint);
+        parameter.Add("_complaints", _complaints);
+
+        var result = await Modal.Show<ComplaintInformation>("Information", parameter).Result;
+
+        if(!result.Cancelled) StateHasChanged();
+    }
+
+    private async Task Delete(Complaint complaint)
+    {
+        var parameter = new ModalParameters();
+        parameter.Add("DeleteComplaint", complaint);
+
+        var formModal = Modal.Show<SureToDeleteComplaint>("Are you sure to delete?", parameter);
+        var result = await formModal.Result;
+
+        if (!result.Cancelled)
+        {
+            try
+            {
+                await Http.DeleteAsync($"/api/complaints/{complaint.Id}");
+                _complaints.Remove(complaint);
+                toastService.ShowSuccess($"{complaint.Date.ToString("dd-MM-yyyy")} {complaint.OrderNumber} was deleted", "Deletion succeeded");
+            }
+            catch
+            {
+                toastService.ShowError("Something went wrong");
+            }
+        }
+    }
+
+    public string selectedProductType { get; set; } = "Watch";
+
+    private async Task AddNewComplaint()
+    {
+        Console.WriteLine("AddNewComplaint " + selectedProductType);
+
+        var parameter = new ModalParameters();
+        parameter.Add("selectedProductType", selectedProductType);
+        parameter.Add("_complaints", _complaints);
+
+        var result = await Modal.Show<AddComplaint>("AddWatchComplaint", parameter).Result;
+
+        if (!result.Cancelled) StateHasChanged();
+    }
+}

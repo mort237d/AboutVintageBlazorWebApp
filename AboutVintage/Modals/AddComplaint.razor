@@ -1,0 +1,355 @@
+﻿@using System.Net
+@using AboutVintageWebAppLibrary
+@using Blazored.Modal
+@using Blazored.Toast.Services
+@using DataAccessLibrary
+@using Microsoft.EntityFrameworkCore.Diagnostics
+@using TradeGeckoLibrary
+@using System.Globalization
+@using System.ComponentModel.DataAnnotations
+@using AboutVintage.Data
+@using EfDataAccessLibrary.Models
+@using Variant = EfDataAccessLibrary.Models.Variant
+@inject IToastService toastService
+@inject IComplaintData _db
+@inject OrderComplaintContextServices OrderComplaintContextServices
+
+<div class="container-fluid">
+    <EditForm Model=newComplaint OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+
+        <div class="row content">
+            <div class="col-sm-4"><label for="Date">Date</label></div>
+            <div class="col-sm-6">
+                <InputDate @bind-Value:format="dd/MM/yyyy" @bind-Value=newComplaint.Date class="form-control form-control-sm" id="Date" />
+                <ValidationMessage For="@(() => newComplaint.Date)" />
+            </div>
+        </div>
+
+        <div class="row content">
+            <div class="col-sm-4"><label for="OrderNumber">OrderNumber</label></div>
+            <div class="col-sm-6">
+                <BlazoredTypeahead SearchMethod="@SearchOrderNumbers"
+                                   @bind-Value="newComplaint.OrderNumber"
+                                   ConvertMethod="ConvertOrderComplaint"
+                                   Debounce="500">
+                    <SelectedTemplate Context="complaint">
+                        @complaint
+                    </SelectedTemplate>
+                    <ResultTemplate Context="complaint">
+                        @complaint.OrderNumber (@complaint.CreatedDate.ToShortDateString())
+                    </ResultTemplate>
+                    <NotFoundTemplate>
+                        Sorry, there weren't any search results.
+                    </NotFoundTemplate>
+                </BlazoredTypeahead>
+                <ValidationMessage For="@(() => newComplaint.OrderNumber)" />
+            </div>
+        </div>
+
+        <div class="row content">
+            <div class="col-sm-4"><label for="CustomerName">CustomerName</label></div>
+            <div class="col-sm-6">
+                <InputText @bind-Value=newComplaint.CustomerName class="form-control form-control-sm" id="CustomerName" />
+                <ValidationMessage For="@(() => newComplaint.CustomerName)" />
+            </div>
+        </div>
+
+        <div class="row content">
+            <div class="col-sm-4"><label for="OrderDate">OrderDate</label></div>
+            <div class="col-sm-6">
+                <InputDate @bind-Value=newComplaint.OrderDate class="form-control form-control-sm" id="OrderDate" />
+                <ValidationMessage For="@(() => newComplaint.OrderDate)" />
+            </div>
+        </div>
+
+        <div class="row content">
+            <div class="col-sm-4"><label for="ProductType">ProductType</label></div>
+            <div class="col-sm-6">
+                <InputSelect @bind-Value=newComplaint.ProductType class="form-control form-control-sm" id="ProductType">
+                    <option>Watch</option>
+                    <option>Strap</option>
+                </InputSelect>
+                <ValidationMessage For="@(() => newComplaint.ProductType)" />
+            </div>
+        </div>
+
+        <div class="row content">
+            <div class="col-sm-4"><label for="ProductVariant">ProductVariant</label></div>
+            <div class="col-sm-6">
+                <BlazoredTypeahead SearchMethod="@SearchVariants"
+                                   @bind-Value="newComplaint.ProductVariant"
+                                   ConvertMethod="ConvertOrderVariant"
+                                   ShowDropDownOnFocus="true">
+                    <SelectedTemplate Context="variant">
+                        @variant
+                    </SelectedTemplate>
+                    <ResultTemplate Context="variant">
+                        @variant.Title - @variant.SKU
+                    </ResultTemplate>
+                    <NotFoundTemplate>
+                        Sorry, there weren't any search results.
+                    </NotFoundTemplate>
+                </BlazoredTypeahead>
+                <ValidationMessage For="@(() => newComplaint.ProductVariant)" />
+            </div>
+        </div>
+
+        @if (newComplaint.ProductType.Equals("Watch"))
+        {
+            <div class="row content">
+                <div class="col-sm-4"><label for="WatchProducer">WatchProducer</label></div>
+                <div class="col-sm-6">
+                    <BlazoredTypeahead SearchMethod="@SearchProducers"
+                                       @bind-Value="newComplaint.WatchProducer"
+                                       ShowDropDownOnFocus="true">
+                        <SelectedTemplate Context="producer">
+                            @producer
+                        </SelectedTemplate>
+                        <ResultTemplate Context="producer">
+                            @producer
+                        </ResultTemplate>
+                        <NotFoundTemplate>
+                            Sorry, there weren't any search results.
+                        </NotFoundTemplate>
+                    </BlazoredTypeahead>
+                    <ValidationMessage For="@(() => newComplaint.WatchProducer)" />
+                </div>
+            </div>
+
+            <div class="row content">
+                <div class="col-sm-4"><label for="WatchNumber">WatchNumber</label></div>
+                <div class="col-sm-6">
+                    <InputNumber @bind-Value=newComplaint.WatchNumber class="form-control form-control-sm" id="WatchNumber" />
+                    <ValidationMessage For="@(() => newComplaint.WatchNumber)" />
+                </div>
+            </div>
+        }
+
+        <div class="row content">
+            <div class="col-sm-4"><label for="Error">Error</label></div>
+            <div class="col-sm-6">
+                <BlazoredTypeahead SearchMethod="@SearchErrors"
+                                   @bind-Value="newComplaint.Error"
+                                   ShowDropDownOnFocus="true">
+                    <SelectedTemplate Context="error">
+                        @error
+                    </SelectedTemplate>
+                    <ResultTemplate Context="error">
+                        @error
+                    </ResultTemplate>
+                    <NotFoundTemplate>
+                        Sorry, there weren't any search results.
+                    </NotFoundTemplate>
+                </BlazoredTypeahead>
+                <ValidationMessage For="@(() => newComplaint.Error)" />
+            </div>
+        </div>
+
+        <div class="row content">
+            <div class="col-sm-4"><label for="Solution">Solution</label></div>
+            <div class="col-sm-6">
+                <BlazoredTypeahead SearchMethod="@SearchSolutions"
+                                   @bind-Value="newComplaint.Solution"
+                                   ShowDropDownOnFocus="true">
+                    <SelectedTemplate Context="complaint">
+                        @complaint
+                    </SelectedTemplate>
+                    <ResultTemplate Context="complaint">
+                        @complaint
+                    </ResultTemplate>
+                    <NotFoundTemplate>
+                        Sorry, there weren't any search results.
+                    </NotFoundTemplate>
+                </BlazoredTypeahead>
+                <ValidationMessage For="@(() => newComplaint.Solution)" />
+            </div>
+        </div>
+
+        <div class="row content">
+            <div class="col-sm-4"><label for="Comments">Comments</label></div>
+            <div class="col-sm-6">
+                <InputTextArea @bind-Value=newComplaint.Comments class="form-control form-control-sm" id="Comments" />
+                <ValidationMessage For="@(() => newComplaint.Comments)" />
+            </div>
+        </div>
+
+        <div class="btn-group btn-group-sm float-right" role="group">
+            <button @onclick="@BlazoredModal.Cancel" type="button" class="btn btn-danger"><i class="oi oi-ban"></i></button>
+            <button type="submit" class="btn btn-success"><i class="oi oi-check"></i></button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private async Task KeyWasPressed(KeyboardEventArgs args, EditContext editContext)
+    {
+        Console.WriteLine(args.Key);
+        if (args.Key.Equals("Enter"))
+        {
+            if (editContext.Validate())
+            {
+                await HandleValidSubmit();
+            }
+        }
+        else if (args.Key.Equals("Escape"))
+        {
+            BlazoredModal.Cancel();
+        }
+    }
+    
+    public OrderComplaint SelectedOrderComplaint { get; set; }
+
+    private async Task<IEnumerable<OrderComplaint>> SearchOrderNumbers(string searchText)
+    {
+        var response = await Task.Run(() =>
+            OrderComplaintContextServices.GetOrderComplaintsByOrderNumber(searchText));
+        return response;
+    }
+
+    public string ConvertOrderComplaint(OrderComplaint orderComplaint)
+    {
+        newComplaint.OrderDate = orderComplaint.CreatedDate;
+
+        if (orderComplaint.Customerer != null) newComplaint.CustomerName
+            = orderComplaint.Customerer.FirstName + " " + orderComplaint.Customerer.LastName;
+        else newComplaint.CustomerName = "Not informed";
+
+        OrderVariants = orderComplaint.Variants;
+
+        return orderComplaint.OrderNumber;
+    }
+
+    public string ConvertOrderVariant(Variant variant)
+    {
+        return variant.Title;
+    }
+
+    public List<Variant> OrderVariants { get; set; } = new List<Variant>();
+
+    private async Task<IEnumerable<string>> SearchSolutions(string searchText)
+    {
+        IEnumerable<string> response;
+        if(newComplaint.ProductType.Equals("Watch")) response = WatchSolutionSuggestions.Where(s => s.ToLower().Contains(searchText.ToLower()));
+        else response = StrapSolutionSuggestions.Where(s => s.ToLower().Contains(searchText.ToLower()));
+
+        if (!response.Any() && !string.IsNullOrEmpty(searchText))
+        {
+            IEnumerable<string> second = new[] { searchText };
+
+            response = response.Concat(second);
+
+            newComplaint.Solution = searchText;
+        }
+
+        return response;
+    }
+
+    private async Task<IEnumerable<string>> SearchErrors(string searchText)
+    {
+        IEnumerable<string> response;
+        if (newComplaint.ProductType.Equals("Watch")) response = WatchErrorSuggestions.Where(s => s.ToLower().Contains(searchText.ToLower()));
+        else response = StrapErrorSuggestions.Where(s => s.ToLower().Contains(searchText.ToLower()));
+
+        if (!response.Any() && !string.IsNullOrEmpty(searchText))
+        {
+            IEnumerable<string> second = new[] { searchText };
+
+            response = response.Concat(second);
+
+            newComplaint.Error = searchText;
+        }
+
+        return response;
+    }
+
+    private async Task<IEnumerable<string>> SearchProducers(string searchText)
+    {
+        IEnumerable<string> response = WatchProducers.Where(s => s.ToLower().Contains(searchText.ToLower()));
+
+        if (!response.Any() && !string.IsNullOrEmpty(searchText))
+        {
+            IEnumerable<string> second = new[] { searchText };
+
+            response = response.Concat(second);
+
+            newComplaint.Error = searchText;
+        }
+
+        return response;
+    }
+
+    private async Task<IEnumerable<Variant>> SearchVariants(string searchText)
+    {
+        var response = OrderVariants.Where(v => v.Title.ToLower().Contains(searchText.ToLower()) || v.SKU.ToLower().Contains(searchText.ToLower()));
+
+        return response;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            newComplaint.Id = await _db.AddComplaint(newComplaint);
+            _complaints.Add(newComplaint);
+            toastService.ShowSuccess($"New complaint was added succesfully", "Added successfully");
+
+            BlazoredModal.Close();
+        }
+        catch
+        {
+            toastService.ShowError("Something went wrong");
+        }
+    }
+
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
+    [Parameter] public string selectedProductType { get; set; }
+    [Parameter] public List<ComplaintModel> _complaints { get; set; }
+
+    private ComplaintModel newComplaint;
+
+    private List<string> WatchErrorSuggestions = new List<string>();
+    private List<string> StrapErrorSuggestions = new List<string>();
+    private List<string> WatchSolutionSuggestions = new List<string>();
+    private List<string> StrapSolutionSuggestions = new List<string>();
+    private List<string> WatchProducers = new List<string>();
+
+    protected override void OnInitialized()
+    {
+        newComplaint = new ComplaintModel() { ProductType = selectedProductType, Date = DateTime.Today, OrderDate = DateTime.Today };
+
+        WatchErrorSuggestions.AddRange(new List<string>() {
+            "Looses time",
+            "Number fallen off",
+            "Crown fallen off",
+            "Dot fallen off",
+            "Hand fallen off",
+            "Glass cracked",
+            "Condensation",
+            "Loose hand",
+            "Loose bezel",
+            "Case error",
+            "Battery"
+        });
+
+        StrapErrorSuggestions.AddRange(new List<string>() {
+            "Quick release error",
+            "Link error",
+            "Butterfly clasp error"
+        });
+
+        WatchSolutionSuggestions.AddRange(new List<string>() {
+            "Exchanged wacth",
+            "Changed battery"
+        });
+
+        StrapSolutionSuggestions.AddRange(new List<string>() {
+            "Exchanged strap",
+            "Changed link"
+        });
+
+        WatchProducers.AddRange(new List<string>() {
+            "Owago"
+        });
+    }
+}

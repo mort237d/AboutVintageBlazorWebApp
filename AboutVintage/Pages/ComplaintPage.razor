@@ -1,0 +1,164 @@
+﻿@page "/complaints"
+@using System.Net
+@using AboutVintage.Data
+@using AboutVintage.Modals
+@using AboutVintageBlazorWebApp.Data
+@using AboutVintageWebAppLibrary
+@using Blazored.Modal
+@using Blazored.Modal.Services
+@using Blazored.Toast.Services
+@using DataAccessLibrary
+@using EfDataAccessLibrary.Models
+@using TradeGeckoLibrary
+@inject IModalService Modal
+@inject IToastService toastService
+@inject IComplaintData _db
+@using Microsoft.Extensions.Logging;
+@inject ILogger<ComplaintPage> logger;
+@inject OrderComplaintContextServices OrderComplaintContextServices
+
+<AuthorizeView>
+    <Authorized>
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text">New complaint</span>
+            </div>
+            <select class="custom-select" id="inputGroupSelect01" @bind="selectedProductType">
+                <option>Watch</option>
+                <option>Strap</option>
+            </select>
+            <div class="input-group-append">
+                <button class="btn btn-success" type="button" id="button-addon2" @onclick="AddNewComplaint">Add</button>
+            </div>
+        </div>
+
+        @if (_complaints == null)
+        {
+            <div class="spinner-border" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive-sm">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Date</th>
+                            <th>Customer name</th>
+                            <th>Order No</th>
+                            <th>Order Date</th>
+                            <th>Product type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input @onkeydown="GetByFilter" @bind:event='oninput' @bind="SearchId" type="number" class="form-control form-control-sm" /></td>
+                            <td><input @onkeydown="GetByFilter" type="date" @bind:event='oninput' @bind="SearchDate" class="form-control form-control-sm" /></td>
+                            <td><input @onkeydown="GetByFilter" type="text" @bind:event='oninput' @bind="SearchCustomerName" class="form-control form-control-sm" /></td>
+                            <td><input @onkeydown="GetByFilter" type="text" @bind:event='oninput' @bind="SearchOrderNumber" class="form-control form-control-sm" /></td>
+                            <td><input @onkeydown="GetByFilter" type="date" @bind:event='oninput' @bind="SearchOrderDate" class="form-control form-control-sm" /></td>
+                            <td><input @onkeydown="GetByFilter" type="text" @bind:event='oninput' @bind="SearchProductType" class="form-control form-control-sm" /></td>
+                        </tr>
+                        @foreach (var complaint in _complaints.OrderByDescending(c => c.Date))
+                        {
+                            <tr @onclick="@(() => ShowInfo(complaint))" style="cursor: pointer">
+                                <td>#@complaint.Id</td>
+                                <td>@complaint.Date.ToString("dd-MM-yyyy")</td>
+                                <td>@complaint.CustomerName</td>
+                                <td>@complaint.OrderNumber</td>
+                                <td>@complaint.OrderDate.ToString("dd-MM-yyyy")</td>
+                                <td>@complaint.ProductType</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+
+    </Authorized>
+
+    <NotAuthorized>
+        Login to use this page
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private List<ComplaintModel> _complaints = new List<ComplaintModel>();
+
+    private ComplaintModel complaintBeforeEdit;
+    public string selectedProductType { get; set; } = "Watch";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!_complaints.Any()) _complaints = await _db.GetTopTenComplaints();
+        logger.LogInformation("Listens størrelse: " + _complaints.Count);
+    }
+
+    private async Task ShowInfo(ComplaintModel complaint)
+    {
+        var parameter = new ModalParameters();
+        parameter.Add("ComplaintInfo", complaint);
+        parameter.Add("_complaints", _complaints);
+
+        var options = new ModalOptions()
+        {
+            ContentScrollable = true,
+            DisableBackgroundCancel = true
+        };
+
+        var result = await Modal.Show<ComplaintInformation>("Information", parameter, options).Result;
+
+        if (!result.Cancelled) StateHasChanged();
+        else complaint.IsEditing = false;
+    }
+
+    private async Task AddNewComplaint()
+    {
+        Console.WriteLine("AddNewComplaint " + selectedProductType);
+
+        var parameter = new ModalParameters();
+        parameter.Add("selectedProductType", selectedProductType);
+        parameter.Add("_complaints", _complaints);
+
+        var options = new ModalOptions()
+        {
+            ContentScrollable = true,
+            DisableBackgroundCancel = true
+        };
+
+        var result = await Modal.Show<AddComplaint>("AddWatchComplaint", parameter, options).Result;
+
+        if (!result.Cancelled) StateHasChanged();
+    }
+
+    public ComplaintModel SearchComplaintModel { get; set; }
+    public int? SearchId { get; set; } = null;
+    public DateTime? SearchDate { get; set; } = null;
+    public string SearchCustomerName { get; set; }
+    public string SearchOrderNumber { get; set; }
+    public DateTime? SearchOrderDate { get; set; } = null;
+    public string SearchProductType { get; set; }
+
+    public async Task GetByFilter(KeyboardEventArgs e)
+    {
+        if (e.Key.Equals("Enter"))
+        {
+            string containsString = $"Id LIKE \'%{SearchId}%\' AND " +
+                                    $"CustomerName LIKE \'%{SearchCustomerName}%\' AND " +
+                                    $"OrderNumber LIKE \'%{SearchOrderNumber}%\' AND " +
+                                    $"ProductType LIKE \'%{SearchProductType}%\'";
+
+            if (SearchDate.HasValue) containsString += 
+                $" AND Date >= \'{SearchDate.Value.Date.ToString("yyyy-MM-dd HH:mm:ss.fff")}\' " +
+                $"AND Date <= \'{SearchDate.Value.Date.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss.fff")}\'";
+            if (SearchOrderDate.HasValue) containsString += 
+                $" AND OrderDate >= \'{SearchOrderDate.Value.Date.ToString("yyyy-MM-dd HH:mm:ss.fff")}\' " +
+                $"AND OrderDate <= \'{SearchOrderDate.Value.Date.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss.fff")}\'";
+
+            _complaints = await _db.GetTopTenComplaintsWhere(containsString);
+        }
+    }
+}

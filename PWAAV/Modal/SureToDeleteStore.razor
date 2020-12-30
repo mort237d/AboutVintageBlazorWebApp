@@ -1,0 +1,51 @@
+﻿@using AboutVintageBlazorWebApp.Data
+
+<table class="table table-sm">
+    <thead>
+    <tr>
+        <th>CATEGORY</th>
+        <th>DATA</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>Date</td>
+        <td>@DeleteStore.Date.ToString("dd-MM-yyyy")</td>
+    </tr>
+    <tr>
+        <td>Store</td>
+        <td>@DeleteStore.StoreName</td>
+    </tr>
+    <tr>
+        <td>Cash</td>
+        <td>@DeleteStore.RevenueCash</td>
+    </tr>
+    <tr>
+        <td>CreditCard</td>
+        <td>@DeleteStore.RevenueCreditCard</td>
+    </tr>
+    <tr>
+        <td>MobilePay</td>
+        <td>@DeleteStore.RevenueMobilePay</td>
+    </tr>
+    <tr>
+        <td>Customers</td>
+        <td>@DeleteStore.CustomerCount</td>
+    </tr>
+    </tbody>
+</table>
+
+<div class="btn-group" role="group" aria-label="Basic example" style="float: right;">
+    <button @onclick="@Close" type="button" class="btn btn-success">Yes</button>
+    <button @onclick="@Cancel" type="button" class="btn btn-danger">No</button>
+</div>
+
+@code {
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
+
+    [Parameter] public Store DeleteStore { get; set; }
+
+    private void Cancel() => BlazoredModal.Cancel();
+    private void Close() => BlazoredModal.Close();
+
+}

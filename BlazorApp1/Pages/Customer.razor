@@ -1,0 +1,22 @@
+﻿@page "/customer"
+@using System.Net
+
+<h3>Customer</h3>
+
+<p>Current count: @customerCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Add customer2</button>
+
+@code {
+    private Customer[] todoItems;
+
+    protected override async Task OnInitializedAsync() =>
+        todoItems = await WebRequestMethods.Http.GetFromJsonAsync<TodoItem[]>("api/TodoItems");
+
+    private int customerCount = 0;
+
+    private void IncrementCount()
+    {
+        customerCount++;
+    }
+}

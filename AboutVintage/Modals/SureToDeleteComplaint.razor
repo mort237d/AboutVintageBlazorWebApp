@@ -1,0 +1,66 @@
+﻿@using AboutVintageWebAppLibrary
+@using Blazored.Modal
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>CATEGORY</th>
+            <th>DATA</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Date</td>
+            <td>@DeleteComplaint.Date.ToString("dd-MM-yyyy")</td>
+        </tr>
+        <tr>
+            <td>Customer name</td>
+            <td>@DeleteComplaint.CustomerName</td>
+        </tr>
+        <tr>
+            <td>Order No</td>
+            <td>@DeleteComplaint.OrderNumber</td>
+        </tr>
+        <tr>
+            <td>Order Date</td>
+            <td>@DeleteComplaint.OrderDate.ToString("dd-MM-yyyy")</td>
+        </tr>
+        <tr>
+            <td>Product variant</td>
+            <td>@DeleteComplaint.ProductVariant</td>
+        </tr>
+        <tr>
+            <td>Watch No</td>
+            <td>@DeleteComplaint.WatchNumber</td>
+        </tr>
+        <tr>
+            <td>Watch Producer</td>
+            <td>@DeleteComplaint.WatchProducer</td>
+        </tr>
+        <tr>
+            <td>Error</td>
+            <td>@DeleteComplaint.Error</td>
+        </tr>
+        <tr>
+            <td>Solution</td>
+            <td>@DeleteComplaint.Solution</td>
+        </tr>
+        <tr>
+            <td>Comments</td>
+            <td>@DeleteComplaint.Comments</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="btn-group" role="group" aria-label="Basic example" style="float: right;">
+    <button @onclick="@Close" type="button" class="btn btn-success">Yes</button>
+    <button @onclick="@Cancel" type="button" class="btn btn-danger">No</button>
+</div>
+
+@code {
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
+
+    [Parameter] public ComplaintModel DeleteComplaint { get; set; }
+
+    private void Cancel() => BlazoredModal.Cancel();
+    private void Close() => BlazoredModal.Close();
+}

@@ -1,0 +1,81 @@
+﻿@using AboutVintageBlazorWebApp.Data
+@using PWAAV.Pages
+@inject HttpClient Http
+@inject IToastService toastService
+
+<p>Would you overwrite the old data?</p>
+
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>CATEGORY</th>
+            <th>OLD</th>
+            <th>NEW</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Date</td>
+            <td>@OldStore.Date.ToString("dd-MM-yyyy")</td>
+            <td>@NewStore.Date.ToString("dd-MM-yyyy")</td>
+        </tr>
+        <tr>
+            <td>Store</td>
+            <td>@OldStore.StoreName</td>
+            <td>@NewStore.StoreName</td>
+        </tr>
+        <tr>
+            <td>Cash</td>
+            <td>@OldStore.RevenueCash</td>
+            <td>@NewStore.RevenueCash</td>
+        </tr>
+        <tr>
+            <td>CreditCard</td>
+            <td>@OldStore.RevenueCreditCard</td>
+            <td>@NewStore.RevenueCreditCard</td>
+        </tr>
+        <tr>
+            <td>MobilePay</td>
+            <td>@OldStore.RevenueMobilePay</td>
+            <td>@NewStore.RevenueMobilePay</td>
+        </tr>
+        <tr>
+            <td>Customers</td>
+            <td>@OldStore.CustomerCount</td>
+            <td>@NewStore.CustomerCount</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="btn-group" role="group" aria-label="Basic example" style="float: right;">
+    <button @onclick="@Update" type="button" class="btn btn-success">Yes</button>
+    <button @onclick="@Cancel" type="button" class="btn btn-danger">No</button>
+</div>
+
+@code {
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
+
+    [Parameter] public Store OldStore { get; set; }
+    [Parameter] public Store NewStore { get; set; }
+
+    private async Task Update()
+    {
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"/api/stores/{OldStore.Id}", NewStore);
+            if (response.IsSuccessStatusCode)
+            {
+                toastService.ShowSuccess($"{NewStore.Date.ToString("dd-MM-yyyy")} {NewStore.StoreName} was updated", "Updated");
+            }
+            else toastService.ShowError("Not updated");
+            await BlazoredModal.Close();
+        }
+        catch
+        {
+            toastService.ShowError("Something went wrong");
+            Cancel();
+        }
+    }
+
+    private void Cancel() => BlazoredModal.Cancel();
+}

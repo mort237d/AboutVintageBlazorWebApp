@@ -1,0 +1,15 @@
+﻿@page "/"
+@using System.Security.Claims
+
+<AuthorizeView>
+    <Authorized>
+        <h1>Hello @context.User.Claims.Where(s => s.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name").FirstOrDefault().Value.Split(" ")[0]!</h1>
+
+        Welcome to your new app v1.0.
+    </Authorized>
+    <NotAuthorized>
+        <h1>Hello!</h1>
+
+        Please login to use the site.
+    </NotAuthorized>
+</AuthorizeView>

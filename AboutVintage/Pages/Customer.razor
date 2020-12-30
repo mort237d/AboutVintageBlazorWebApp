@@ -1,0 +1,364 @@
+﻿@page "/closing_scheme"
+@attribute [Authorize]
+@using System.Net.Http
+@using AboutVintage.Modals
+@using AboutVintageBlazorWebApp.Data
+@using Blazored.Modal
+@using Blazored.Modal.Services
+@using Blazored.Toast.Services
+@using DataAccessLibrary
+@inject IToastService toastService
+@inject IModalService Modal
+@inject IStoreData _db
+
+<AuthorizeView>
+    <Authorized>
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon1">GET</span>
+            </div>
+            <select class="custom-select" id="inputGroupSelect01" @bind="selectedStore">
+                <option>All</option>
+                <option>Flagship</option>
+                <option>Nygade</option>
+            </select>
+            <input @onkeydown="@(e => KeyPressedGet(e))" @bind="MinDate" @bind:event='oninput' class="form-control" placeholder="minDate" type="date" max="@MaximumDate">
+            <input @onkeydown="@(e => KeyPressedGet(e))" @bind="MaxDate" @bind:event='oninput' class="form-control" placeholder="maxDate" type="date" max="@MaximumDate">
+            <div class="input-group-append">
+                <button class="btn btn-primary" type="button" id="button-addon2" @onclick="GetByDate">Get</button>
+            </div>
+        </div>
+
+        @if (_stores == null)
+        {
+            <div class="spinner-border" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive-sm table-hover">
+                <table class="table table-sm" style="visibility: @TableHidden">
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>StoreModel</th>
+                        <th>Cash</th>
+                        <th>MobilePay</th>
+                        <th>CreditCard</th>
+                        <th>Customers</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td><input @onkeydown="@(e => KeyWasPressed(e))" name="Count" aria-describedby="button-addon2" aria-label="CustomerCount" @bind:event='oninput' @bind="StoreModel.Date" class="form-control-sm" placeholder="Date" type="date" max="@MaximumDate"></td>
+                        <td>
+                            <select class="custom-select-sm" id="inputGroupSelect01" @bind="StoreModel.StoreName">
+                                <option>Flagship</option>
+                                <option>Nygade</option>
+                            </select>
+                        </td>
+                        <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="StoreModel.RevenueCash" class="form-control-sm" placeholder="Cash" type="number"></td>
+                        <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="StoreModel.RevenueMobilePay" class="form-control-sm" placeholder="MobilePay" type="number"></td>
+                        <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="StoreModel.RevenueCreditCard" class="form-control-sm" placeholder="CreditCard" type="number"></td>
+                        <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="StoreModel.CustomerCount" class="form-control-sm" placeholder="Customers" type="number" min="0"></td>
+                        <td><button class="btn btn-success btn-sm" type="button" id="button-addon2" @onclick="AddStore"><i class="oi oi-plus"></i></button></td>
+                    </tr>
+
+                    @foreach (var store in _stores.OrderByDescending(s => s.Date))
+                    {
+                        if (store.IsEditing)
+                        {
+                            <tr>
+                                <td>@store.Date.ToString("dd-MM-yyyy")</td>
+                                <td>
+                                    <select class="custom-select-sm" id="inputGroupSelect01" @bind="store.StoreName">
+                                        <option>Flagship</option>
+                                        <option>Nygade</option>
+                                    </select>
+                                </td>
+                                <td><input @onkeydown="@(e => KeyPressedUpdate(e, store))" @bind:event='oninput' @bind="store.RevenueCash" class="form-control-sm" placeholder="Cash" type="number"></td>
+                                <td><input @onkeydown="@(e => KeyPressedUpdate(e, store))" @bind:event='oninput' @bind="store.RevenueMobilePay" class="form-control-sm" placeholder="MobilePay" type="number"></td>
+                                <td><input @onkeydown="@(e => KeyPressedUpdate(e, store))" @bind:event='oninput' @bind="store.RevenueCreditCard" class="form-control-sm" placeholder="CreditCard" type="number"></td>
+                                <td><input @onkeydown="@(e => KeyPressedUpdate(e, store))" @bind:event='oninput' @bind="store.CustomerCount" class="form-control-sm" placeholder="Customers" type="number" min="0"></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="Basic example">
+                                        <button @onclick="@(() => Edit(store))" type="button" class="btn btn-danger"><i class="oi oi-ban"></i></button>
+                                        <button @onclick="@(() => Update(store))" type="button" class="btn btn-success"><i class="oi oi-check"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            <tr @onclick="@(() => DoSomething(store))">
+                                <td>@store.Date.ToString("dd-MM-yyyy")</td>
+                                <td>@store.StoreName</td>
+                                <td>kr. @store.RevenueCash,-</td>
+                                <td>kr. @store.RevenueMobilePay,-</td>
+                                <td>kr. @store.RevenueCreditCard,-</td>
+                                <td>@store.CustomerCount</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="Basic example">
+                                        <button @onclick="@(() => Edit(store))" type="button" class="btn btn-primary"><i class="oi oi-pencil"></i></button>
+                                        <button @onclick="@(() => Delete(store))" type="button" class="btn btn-danger"><i class="oi oi-trash"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+
+        }
+    </Authorized>
+    <NotAuthorized>
+        Login to use this page
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private string _localApi = "https://localhost:44327/";
+    private string _azureApi = "https://aboutvintageapiservice.azurewebsites.net/";
+    private string _currentApi;
+
+    private List<StoreModel> _stores = new List<StoreModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentApi = _azureApi;
+        if (!_stores.Any()) _stores = await _db.GetTopTenStores();
+    }
+
+    public string MaximumDate { get; set; } = DateTime.Now.ToString("yyyy-MM-dd");
+
+    public DateTime MinDate { get; set; } = DateTime.Now;
+    public DateTime MaxDate { get; set; } = DateTime.Now;
+    public string StoreName { get; set; }
+    public string TableHidden { get; set; } = "visible";
+
+    public string selectedStore { get; set; } = "All";
+
+    public StoreModel StoreModel = new StoreModel { Date = DateTime.Now, StoreName = "Flagship" };
+
+    private async Task AddStore()
+    {
+        List<StoreModel> tmp = null;
+
+        try
+        {
+            tmp = await _db.GetStoresByDateAndStore(StoreModel.StoreName, StoreModel.Date.Date, StoreModel.Date.Date);
+        }
+        catch
+        {
+            toastService.ShowError("StoreModel name not filled out");
+            return;
+        }
+
+        if (StoreModel.RevenueCash == null) StoreModel.RevenueCash = 0;
+        if (StoreModel.RevenueCreditCard == null) StoreModel.RevenueCreditCard = 0;
+        if (StoreModel.RevenueMobilePay == null) StoreModel.RevenueMobilePay = 0;
+        if (StoreModel.CustomerCount == null) StoreModel.CustomerCount = 0;
+
+        if (!tmp.Any())
+        {
+            try
+            {
+                await _db.AddStore(StoreModel);
+                _stores.Add(StoreModel);
+                _stores = _stores.OrderBy(s => s.Date).Skip(_stores.Count - 10).ToList();
+                TableHidden = "visible";
+                toastService.ShowSuccess($"{StoreModel.Date.ToString("dd-MM-yyyy")} {StoreModel.StoreName} was added succesfully", "Added successfully");
+            }
+            catch (Exception e)
+            {
+                toastService.ShowError($"{StoreModel.Date.ToString("dd-MM-yyyy")} {StoreModel.StoreName} wasn't added", "Not added");
+            }
+        }
+        else
+        {
+            var parameter = new ModalParameters();
+            parameter.Add("OldStore", tmp[0]);
+            parameter.Add("NewStore", StoreModel);
+
+            var options = new ModalOptions()
+            {
+                ContentScrollable = true,
+                DisableBackgroundCancel = true
+            };
+
+            var formModal = Modal.Show<DataAlreadyExists>("Data already exists", parameter, options);
+            var result = await formModal.Result;
+
+            if (!result.Cancelled)
+            {
+                _stores = await _db.GetTopTenStores();
+            }
+        }
+
+        StoreModel = new StoreModel { Date = DateTime.Now, StoreName = StoreModel.StoreName };
+    }
+
+    private async Task GetByDate()
+    {
+        try
+        {
+            _stores = await _db.GetStoresByDateAndStore(selectedStore, MinDate.Date, MaxDate.Date);
+            TableHidden = "visible";
+            if (!_stores.Any())
+            {
+                toastService.ShowError($"No data was to be find on {selectedStore} between {MinDate.ToString("dd-MM-yyyy")} and  {MaxDate.ToString("dd-MM-yyyy")}", "No data");
+            }
+        }
+        catch
+        {
+            toastService.ShowError("Something went wrong");
+        }
+    }
+
+    private async Task KeyWasPressed(KeyboardEventArgs args)
+    {
+        Console.WriteLine(args.Key);
+        if (args.Key == "Enter")
+        {
+            Console.WriteLine("Enter was pressed");
+            await AddStore();
+        }
+    }
+
+    private async Task KeyPressedUpdate(KeyboardEventArgs args, StoreModel store)
+    {
+        Console.WriteLine(args.Key);
+        if (args.Key == "Enter")
+        {
+            Console.WriteLine("Enter was pressed");
+            await Update(store);
+        }
+    }
+
+    private async Task KeyPressedGet(KeyboardEventArgs args)
+    {
+        Console.WriteLine(args.Key);
+        if (args.Key == "Enter")
+        {
+            Console.WriteLine("Enter was pressed");
+            await GetByDate();
+        }
+    }
+
+    private async Task KeyDownCustomers(KeyboardEventArgs args)
+    {
+        Console.WriteLine(args.Key);
+        if (args.Key == "Enter")
+        {
+            Console.WriteLine("Enter was pressed");
+            await AddStore();
+        }
+        else if (args.Key == ".")
+        {
+            string customerString = StoreModel.CustomerCount.ToString();
+            int result = int.Parse(customerString.Remove(customerString.Length - 1, 1));
+            StoreModel.CustomerCount = result;
+        }
+    }
+
+    private void DoSomething(StoreModel store)
+    {
+        Console.WriteLine(store.StoreName);
+    }
+
+    private StoreModel storeBeforeEdit;
+
+    private void Edit(StoreModel store)
+    {
+        if (!store.IsEditing)
+        {
+            storeBeforeEdit = new StoreModel();
+            storeBeforeEdit.CustomerCount = store.CustomerCount;
+            storeBeforeEdit.StoreName = store.StoreName;
+            storeBeforeEdit.RevenueCreditCard = store.RevenueCreditCard;
+            storeBeforeEdit.RevenueCash = store.RevenueCash;
+            storeBeforeEdit.RevenueMobilePay = store.RevenueMobilePay;
+            storeBeforeEdit.Date = store.Date;
+        }
+        if (store.IsEditing)
+        {
+            store.CustomerCount = storeBeforeEdit.CustomerCount;
+            store.StoreName = storeBeforeEdit.StoreName;
+            store.RevenueCreditCard = storeBeforeEdit.RevenueCreditCard;
+            store.RevenueCash = storeBeforeEdit.RevenueCash;
+            store.RevenueMobilePay = storeBeforeEdit.RevenueMobilePay;
+            store.Date = storeBeforeEdit.Date;
+        };
+
+        foreach (StoreModel s in _stores)
+        {
+            if (store != s) s.IsEditing = false;
+        }
+
+        store.IsEditing = !store.IsEditing;
+    }
+
+    private async Task Update(StoreModel store)
+    {
+        if (storeBeforeEdit.CustomerCount == store.CustomerCount &&
+        storeBeforeEdit.StoreName == store.StoreName &&
+        storeBeforeEdit.RevenueCreditCard == store.RevenueCreditCard &&
+        storeBeforeEdit.RevenueCash == store.RevenueCash &&
+        storeBeforeEdit.RevenueMobilePay == store.RevenueMobilePay &&
+        storeBeforeEdit.Date == store.Date)
+        {
+            toastService.ShowInfo("Nothing has changed");
+            store.IsEditing = false;
+        }
+        else
+        {
+            if (store.RevenueCash == null) store.RevenueCash = 0;
+            if (store.RevenueCreditCard == null) store.RevenueCreditCard = 0;
+            if (store.RevenueMobilePay == null) store.RevenueMobilePay = 0;
+            if (store.CustomerCount == null) store.CustomerCount = 0;
+
+            try
+            {
+                await _db.UpdateStore(store);
+                store.IsEditing = false;
+                toastService.ShowSuccess($"{StoreModel.Date.ToString("dd-MM-yyyy")} {StoreModel.StoreName} was updated", "Updated");
+            }
+            catch
+            {
+                toastService.ShowError("Something went wrong");
+            }
+        }
+    }
+
+    private async Task Delete(StoreModel store)
+    {
+        var parameter = new ModalParameters();
+        parameter.Add("DeleteStore", store);
+
+        var options = new ModalOptions()
+        {
+            ContentScrollable = true,
+            DisableBackgroundCancel = true
+        };
+
+        var formModal = Modal.Show<SureToDeleteStore>("Are you sure to delete?", parameter, options);
+        var result = await formModal.Result;
+
+        if (!result.Cancelled)
+        {
+            try
+            {
+                await _db.DeleteStore(store.Id);
+                _stores.Remove(store);
+                toastService.ShowSuccess($"{StoreModel.Date.ToString("dd-MM-yyyy")} {StoreModel.StoreName} was deleted", "Deletion succeeded");
+            }
+            catch
+            {
+                toastService.ShowError("Something went wrong");
+            }
+        }
+    }
+}

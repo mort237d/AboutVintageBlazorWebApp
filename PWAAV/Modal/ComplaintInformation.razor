@@ -1,0 +1,270 @@
+﻿@using AboutVintageWebAppLibrary
+@inject HttpClient Http
+@inject IModalService Modal
+@inject IToastService toastService
+
+<table class="table table-sm">
+    <thead>
+    <tr>
+        <th>CATEGORY</th>
+        <th>DATA</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>ID</td>
+        <td>#@ComplaintInfo.Id</td>
+    </tr>
+    <tr>
+        <td>Date</td>
+        @if (ComplaintInfo.IsEditing)
+        {
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="ComplaintInfo.Date" class="form-control-sm" placeholder="Comments" type="date"></td>
+        }
+        else
+        {
+            <td>@ComplaintInfo.Date.ToString("dd-MM-yyyy")</td>
+        }
+    </tr>
+    <tr>
+        <td>Customer name</td>
+        @if (ComplaintInfo.IsEditing)
+        {
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="ComplaintInfo.CustomerName" class="form-control-sm" placeholder="Comments" type="text"></td>
+        }
+        else
+        {
+            <td>@ComplaintInfo.CustomerName</td>
+        }
+    </tr>
+    <tr>
+        <td>Order No</td>
+        @if (ComplaintInfo.IsEditing)
+        {
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="ComplaintInfo.OrderNumber" class="form-control-sm" placeholder="Comments" type="text"></td>
+        }
+        else
+        {
+            <td>@ComplaintInfo.OrderNumber</td>
+        }
+    </tr>
+    <tr>
+        <td>Order Date</td>
+        @if (ComplaintInfo.IsEditing)
+        {
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="ComplaintInfo.OrderDate" class="form-control-sm" placeholder="Comments" type="date"></td>
+        }
+        else
+        {
+            <td>@ComplaintInfo.OrderDate.ToString("dd-MM-yyyy")</td>
+        }
+    </tr>
+    <tr>
+        <td>Product type</td>
+        @if (ComplaintInfo.IsEditing)
+        {
+            <select class="custom-select-sm" id="inputGroupSelect01" @bind="ComplaintInfo.ProductType">
+                <option>Watch</option>
+                <option>Strap</option>
+            </select>
+        }
+        else
+        {
+            <td>@ComplaintInfo.ProductType</td>
+        }
+    </tr>
+    <tr>
+        <td>Product variant</td>
+        @if (ComplaintInfo.IsEditing)
+        {
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="ComplaintInfo.ProductVariant" class="form-control-sm" placeholder="Comments" type="text"></td>
+        }
+        else
+        {
+            <td>@ComplaintInfo.ProductVariant</td>
+        }
+    </tr>
+    @if (ComplaintInfo.ProductType.Equals("Watch"))
+    {
+        <tr>
+            <td>Watch No</td>
+            @if (ComplaintInfo.IsEditing)
+            {
+                <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="ComplaintInfo.WatchNumber" class="form-control-sm" placeholder="Comments" type="number"></td>
+            }
+            else
+            {
+                <td>@ComplaintInfo.WatchNumber</td>
+            }
+        </tr>
+        <tr>
+            <td>Watch Producer</td>
+            @if (ComplaintInfo.IsEditing)
+            {
+                <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="ComplaintInfo.WatchProducer" class="form-control-sm" placeholder="Comments" type="text"></td>
+            }
+            else
+            {
+                <td>@ComplaintInfo.WatchProducer</td>
+            }
+        </tr>
+    }
+    <tr>
+        <td>Error</td>
+        @if (ComplaintInfo.IsEditing)
+        {
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="ComplaintInfo.Error" class="form-control-sm" placeholder="Comments" type="text"></td>
+        }
+        else
+        {
+            <td>@ComplaintInfo.Error</td>
+        }
+    </tr>
+    <tr>
+        <td>Solution</td>
+        @if (ComplaintInfo.IsEditing)
+        {
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="ComplaintInfo.Solution" class="form-control-sm" placeholder="Comments" type="text"></td>
+        }
+        else
+        {
+            <td>@ComplaintInfo.Solution</td>
+        }
+    </tr>
+    <tr>
+        <td>Comments</td>
+        @if (ComplaintInfo.IsEditing)
+        {
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="ComplaintInfo.Comments" class="form-control-sm" placeholder="Comments" type="text"></td>
+        }
+        else
+        {
+            <td>@ComplaintInfo.Comments</td>
+        }
+    </tr>
+    </tbody>
+</table>
+
+@if (ComplaintInfo.IsEditing)
+{
+    <div class="btn-group btn-group-sm float-right" role="group">
+        <button @onclick="@(() => Edit(ComplaintInfo))" type="button" class="btn btn-danger"><i class="oi oi-ban"></i></button>
+        <button @onclick="@(() => Update(ComplaintInfo))" type="button" class="btn btn-success"><i class="oi oi-check"></i></button>
+    </div>
+}
+else
+{
+    <div class="btn-group btn-group-sm, float-right" role="group">
+        <button @onclick="@(() => Edit(ComplaintInfo))" type="button" class="btn btn-primary"><i class="oi oi-pencil"></i></button>
+        <button @onclick="@(() => Delete(ComplaintInfo))" type="button" class="btn btn-danger"><i class="oi oi-trash"></i></button>
+    </div>
+}
+
+@code {
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
+    [Parameter] public Complaint ComplaintInfo { get; set; }
+    [Parameter] public List<Complaint> _complaints { get; set; }
+
+    private void KeyWasPressed(KeyboardEventArgs args)
+    {
+        Console.WriteLine(args.Key);
+    }
+
+    private Complaint complaintBeforeEdit;
+
+    private void Edit(Complaint complaint)
+    {
+        if (!complaint.IsEditing)
+        {
+            complaintBeforeEdit = new Complaint();
+            complaintBeforeEdit.Date = complaint.Date;
+            complaintBeforeEdit.CustomerName = complaint.CustomerName;
+            complaintBeforeEdit.ProductVariant = complaint.ProductVariant;
+            complaintBeforeEdit.OrderNumber = complaint.OrderNumber;
+            complaintBeforeEdit.Comments = complaint.Comments;
+            complaintBeforeEdit.Error = complaint.Error;
+            complaintBeforeEdit.Solution = complaint.Solution;
+            complaintBeforeEdit.WatchNumber = complaint.WatchNumber;
+            complaintBeforeEdit.WatchProducer = complaint.WatchProducer;
+            complaintBeforeEdit.OrderDate = complaint.OrderDate;
+            complaintBeforeEdit.ProductType = complaint.ProductType;
+        }
+        if (complaint.IsEditing)
+        {
+            complaint.Date = complaintBeforeEdit.Date;
+            complaint.CustomerName = complaintBeforeEdit.CustomerName;
+            complaint.ProductVariant = complaintBeforeEdit.ProductVariant;
+            complaint.OrderNumber = complaintBeforeEdit.OrderNumber;
+            complaint.Comments = complaintBeforeEdit.Comments;
+            complaint.Error = complaintBeforeEdit.Error;
+            complaint.Solution = complaintBeforeEdit.Solution;
+            complaint.WatchNumber = complaintBeforeEdit.WatchNumber;
+            complaint.WatchProducer = complaintBeforeEdit.WatchProducer;
+            complaint.OrderDate = complaintBeforeEdit.OrderDate;
+            complaint.ProductType = complaintBeforeEdit.ProductType;
+        };
+
+        complaint.IsEditing = !complaint.IsEditing;
+    }
+
+    private async Task Update(Complaint complaint)
+    {
+        if (complaintBeforeEdit.Date == complaint.Date &&
+        complaintBeforeEdit.CustomerName == complaint.CustomerName &&
+        complaintBeforeEdit.ProductVariant == complaint.ProductVariant &&
+        complaintBeforeEdit.OrderNumber == complaint.OrderNumber &&
+        complaintBeforeEdit.Comments == complaint.Comments &&
+        complaintBeforeEdit.Error == complaint.Error &&
+        complaintBeforeEdit.Solution == complaint.Solution &&
+        complaintBeforeEdit.WatchNumber == complaint.WatchNumber &&
+        complaintBeforeEdit.WatchProducer == complaint.WatchProducer &&
+        complaintBeforeEdit.OrderDate == complaint.OrderDate &&
+        complaintBeforeEdit.ProductType == complaint.ProductType)
+        {
+            toastService.ShowInfo("Nothing has changed");
+            complaint.IsEditing = false;
+        }
+        else
+        {
+            try
+            {
+                await Http.PutAsJsonAsync($"/api/complaints/{complaint.Id}", complaint);
+                complaint.IsEditing = false;
+                toastService.ShowSuccess($"#{complaint.Id} was updated", "Updated");
+
+                BlazoredModal.Close();
+            }
+            catch
+            {
+                toastService.ShowError("Something went wrong");
+            }
+        }
+    }
+
+    private async Task Delete(Complaint complaint)
+    {
+        var parameter = new ModalParameters();
+        parameter.Add("DeleteComplaint", complaint);
+
+        var formModal = Modal.Show<SureToDeleteComplaint>("Are you sure to delete?", parameter);
+        var result = await formModal.Result;
+
+        if (!result.Cancelled)
+        {
+            try
+            {
+                await Http.DeleteAsync($"/api/complaints/{complaint.Id}");
+
+                toastService.ShowSuccess($"#{complaint.Id} was deleted", "Deletion succeeded");
+
+                _complaints.Remove(complaint);
+
+                BlazoredModal.Close();
+            }
+            catch
+            {
+                toastService.ShowError("Something went wrong");
+            }
+        }
+    }
+}

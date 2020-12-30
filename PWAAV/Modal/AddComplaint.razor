@@ -1,0 +1,115 @@
+﻿@using AboutVintageWebAppLibrary
+@inject HttpClient Http
+@inject IToastService toastService
+
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>CATEGORY</th>
+            <th>DATA</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Date</td>
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="newComplaint.Date" class="form-control-sm" placeholder="Date" type="date"></td>
+        </tr>
+        <tr>
+            <td>Customer name</td>
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="newComplaint.CustomerName" class="form-control-sm" placeholder="CustomerName" type="text"></td>
+        </tr>
+        <tr>
+            <td>Order No</td>
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="newComplaint.OrderNumber" class="form-control-sm" placeholder="OrderNumber" type="text"></td>
+
+        </tr>
+        <tr>
+            <td>Order Date</td>
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="newComplaint.OrderDate" class="form-control-sm" placeholder="OrderDate" type="date"></td>
+
+        </tr>
+        <tr>
+            <td>Product type</td>
+            <select class="custom-select-sm" id="inputGroupSelect01" @bind="newComplaint.ProductType">
+                <option>Watch</option>
+                <option>Strap</option>
+            </select>
+        </tr>
+        <tr>
+            <td>Product variant</td>
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="newComplaint.ProductVariant" class="form-control-sm" placeholder="ProductVariant" type="text"></td>
+
+        </tr>
+        @if (newComplaint.ProductType.Equals("Watch"))
+        {
+            <tr>
+                <td>Watch No</td>
+                <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="newComplaint.WatchNumber" class="form-control-sm" placeholder="WatchNumber" type="number"></td>
+
+            </tr>
+            <tr>
+                <td>Watch Producer</td>
+                <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="newComplaint.WatchProducer" class="form-control-sm" placeholder="WatchProducer" type="text"></td>
+
+            </tr>
+        }
+        <tr>
+            <td>Error</td>
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="newComplaint.Error" class="form-control-sm" placeholder="Error" type="text"></td>
+
+        </tr>
+        <tr>
+            <td>Solution</td>
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="newComplaint.Solution" class="form-control-sm" placeholder="Solution" type="text"></td>
+
+        </tr>
+        <tr>
+            <td>Comments</td>
+            <td><input @onkeydown="@(e => KeyWasPressed(e))" @bind:event='oninput' @bind="newComplaint.Comments" class="form-control-sm" placeholder="Comments" type="text"></td>
+
+        </tr>
+    </tbody>
+</table>
+
+<div class="btn-group btn-group-sm float-right" role="group">
+    <button @onclick="@BlazoredModal.Cancel" type="button" class="btn btn-danger"><i class="oi oi-ban"></i></button>
+    <button @onclick="@Add" type="button" class="btn btn-success"><i class="oi oi-check"></i></button>
+</div>
+
+@code {
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
+    [Parameter] public string selectedProductType { get; set; }
+    [Parameter] public List<Complaint> _complaints { get; set; }
+
+    private void KeyWasPressed(KeyboardEventArgs args)
+    {
+        Console.WriteLine(args.Key);
+    }
+
+    private Complaint newComplaint;
+
+    protected override void OnInitialized()
+    {
+        newComplaint = new Complaint{ProductType = selectedProductType, Date = DateTime.Now, OrderDate = DateTime.Now};
+    }
+
+    private async Task Add()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync($"/api/complaints", newComplaint);
+            if (response.IsSuccessStatusCode)
+            {
+                _complaints.Add(newComplaint);
+                toastService.ShowSuccess($"New complaint was added succesfully", "Added successfully");
+            }
+            else toastService.ShowError($"New complaint wasn't added", "Not added");
+
+            BlazoredModal.Close();
+        }
+        catch
+        {
+            toastService.ShowError("Something e´went wrong");
+        }
+    }
+}
